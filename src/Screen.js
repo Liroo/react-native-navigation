@@ -20,8 +20,8 @@ class Navigator {
     this.navigatorID = navigatorID;
     this.screenInstanceID = screenInstanceID;
     this.navigatorEventID = navigatorEventID;
-    this.navigatorEventHandler = null;
-    this.navigatorEventSubscription = null;
+    this.navigatorEventHandler = [];
+    this.navigatorEventSubscription = [];
   }
 
   push(params = {}) {
@@ -141,11 +141,11 @@ class Navigator {
   }
 
   setOnNavigatorEvent(callback) {
-    this.navigatorEventHandler = callback;
+    this.navigatorEventHandler.push(callback);
     if (!this.navigatorEventSubscription) {
       let Emitter = Platform.OS === 'android' ? DeviceEventEmitter : NativeAppEventEmitter;
-      this.navigatorEventSubscription = Emitter.addListener(this.navigatorEventID, (event) => this.onNavigatorEvent(event));
-      Navigation.setEventHandler(this.navigatorEventID, (event) => this.onNavigatorEvent(event));
+      this.navigatorEventSubscription.push(Emitter.addListener(this.navigatorEventID, (event) => this.onNavigatorEvent(event)));
+      Navigation.setEventHandler(this.navigatorEventID, (event) => this.onNavigatorEvent(event) );
     }
   }
 
@@ -154,14 +154,18 @@ class Navigator {
   }
 
   onNavigatorEvent(event) {
-    if (this.navigatorEventHandler) {
-      this.navigatorEventHandler(event);
+    if (this.navigatorEventHandler.length > 0) {
+      this.navigatorEventHandler.forEach((callback) =>
+        callback(event);
+      );
     }
   }
 
   cleanup() {
     if (this.navigatorEventSubscription) {
-      this.navigatorEventSubscription.remove();
+      this.navigatorEventSubscription.forEach((eventHandler) =>
+        eventHandler.remove();
+      );
       Navigation.clearEventHandler(this.navigatorEventID);
     }
   }
